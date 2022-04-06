@@ -1,11 +1,13 @@
-/*
- * ESP822 temprature logging to Google Sheet
- * CircuitDigest(www.circuitdigest.com)
-*/
+// Example Arduino/ESP8266 code to upload data to Google Sheets
+// Follow setup instructions found here:
+// https://github.com/StorageB/Google-Sheets-Logging
+// reddit: u/StorageB107
+// email: StorageUnitB@gmail.com
 
+
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "HTTPSRedirect.h"
-#include "DebugMacros.h"
 #include <DHT.h>
 
 #define DHTPIN 5                                                           // what digital pin we're connected to
@@ -17,50 +19,48 @@ float t;
 String sheetHumid = "";
 String sheetTemp = "";
 
-const char* ssid = "sigma-guest";                //replace with our wifi ssid
-const char* password = "starforlife2005";         //replace with your wifi password
+// Enter network credentials:
+const char* ssid     = "sigma-guest";
+const char* password = "starforlife2005";
 
-const char* host = "script.google.com";
-const char *GScriptId = "AKfycbyd8zByoh1pEv8lf9VNWb9QASjXZEEwOeeNFkKv0bTm3NbEpvk"; // Replace with your own google script id
-const int httpsPort = 443; //the https port is same
+// Enter Google Script Deployment ID:
+const char *GScriptId = "AKfycbyd8zByoh1pEv8lf9VNWb9QASjXZEEwOeeNFkKv0bTm3NbEpvk";
 
-// echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
-const char* fingerprint = "";
-
-//const uint8_t fingerprint[20] = {};
-
-String url = String("/macros/s/") + GScriptId + "/exec?value=Temperature";  // Write Teperature to Google Spreadsheet at cell A1
-// Fetch Google Calendar events for 1 week ahead
-String url2 = String("/macros/s/") + GScriptId + "/exec?cal";  // Write to Cell A continuosly
-
-//replace with sheet name not with spreadsheet file name taken from google
-String payload_base =  "{\"command\": \"appendRow\", \
-                    \"sheet_name\": \"TempSheet\", \
-                       \"values\": ";
+// Enter command (insert_row or append_row) and your Google Sheets sheet name (default is Sheet1):
+String payload_base =  "{\"command\": \"insert_row\", \"sheet_name\": \"TempSheet\", \"values\": ";
 String payload = "";
 
+// Google Sheets setup (do not edit)
+const char* host = "script.google.com";
+const int httpsPort = 443;
+const char* fingerprint = "";
+String url = String("/macros/s/") + GScriptId + "/exec";
 HTTPSRedirect* client = nullptr;
 
-// used to store the values of free stack and heap before the HTTPSRedirect object is instantiated
-// so that they can be written to Google sheets upon instantiation
+// Declare variables that will be published to Google Sheets
+int value0 = 0;
+int value1 = 0;
+int value2 = 0;
 
 void setup() {
-  delay(1000);
-  Serial.begin(115200);
-  dht.begin();     //initialise DHT11
 
-  Serial.println();
-  Serial.print("Connecting to wifi: ");
-  Serial.println(ssid);
+  Serial.begin(9600);        
+  delay(10);
+  Serial.println('\n');
+  dht.begin();     //initialise DHT22
   
-  WiFi.begin(ssid, password);
+  // Connect to WiFi
+  WiFi.begin(ssid, password);             
+  Serial.print("Connecting to ");
+  Serial.print(ssid); Serial.println(" ...");
+
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    delay(1000);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
+  Serial.println('\n');
+  Serial.println("Connection established!");  
+  Serial.print("IP address:\t");
   Serial.println(WiFi.localIP());
 
   // Use HTTPSRedirect class to create a new TLS connection
@@ -68,124 +68,78 @@ void setup() {
   client->setInsecure();
   client->setPrintResponseBody(true);
   client->setContentTypeHeader("application/json");
+  
   Serial.print("Connecting to ");
-  Serial.println(host);          //try to connect with "script.google.com"
+  Serial.println(host);
 
-  // Try to connect for a maximum of 5 times then exit
+  // Try to connect for a maximum of 5 times
   bool flag = false;
-  for (int i = 0; i < 5; i++) {
+  for (int i=0; i<5; i++){ 
     int retval = client->connect(host, httpsPort);
-    if (retval == 1) {
-      flag = true;
-      break;
+    if (retval == 1){
+       flag = true;
+       Serial.println("Connected");
+       break;
     }
     else
       Serial.println("Connection failed. Retrying...");
   }
-
-  if (!flag) {
+  if (!flag){
     Serial.print("Could not connect to server: ");
     Serial.println(host);
-    Serial.println("Exiting...");
     return;
   }
-// Finish setup() function in 1s since it will fire watchdog timer and will reset the chip.
-//So avoid too many requests in setup()
-
-  Serial.println("\nWrite into cell 'A1'");
-  Serial.println("------>");
-  // fetch spreadsheet data
-  client->GET(url, host);
-  
-  Serial.println("\nGET: Fetch Google Calendar Data:");
-  Serial.println("------>");
-  // fetch spreadsheet data
-  client->GET(url2, host);
-
- Serial.println("\nStart Sending Sensor Data to Google Spreadsheet");
-
-  
-  // delete HTTPSRedirect object
-  delete client;
-  client = nullptr;
+  delete client;    // delete HTTPSRedirect object
+  client = nullptr; // delete HTTPSRedirect object
 }
+
 
 void loop() {
 
   h = dht.readHumidity();                                              // Reading temperature or humidity takes about 250 milliseconds!
   t = dht.readTemperature();                                           // Read temperature as Celsius (the default)
+
   if (isnan(h) || isnan(t)) {                                                // Check if any reads failed and exit early (to try again).
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
+
   Serial.print("Humidity: ");  Serial.print(h);
   sheetHumid = String(h) + String("%");                                         //convert integer humidity to string humidity
   Serial.print("%  Temperature: ");  Serial.print(t);  Serial.println("°C ");
   sheetTemp = String(t) + String("°C");
 
-  static int error_count = 0;
-  static int connect_count = 0;
-  const unsigned int MAX_CONNECT = 20;
   static bool flag = false;
-
-  payload = payload_base + "\"" + sheetTemp + "," + sheetHumid + "\"}";
-
-  if (!flag) {
+  if (!flag){
     client = new HTTPSRedirect(httpsPort);
     client->setInsecure();
     flag = true;
     client->setPrintResponseBody(true);
     client->setContentTypeHeader("application/json");
   }
-
-  if (client != nullptr) {
-    if (!client->connected()) {
+  if (client != nullptr){
+    if (!client->connected()){
       client->connect(host, httpsPort);
-      client->POST(url2, host, payload, false);
-      Serial.print("Sent : ");  Serial.println("Temp and Humid");
     }
   }
-  else {
-    DPRINTLN("Error creating client object!");
-    error_count = 5;
-  }
-
-  if (connect_count > MAX_CONNECT) {
-    connect_count = 0;
-    flag = false;
-    delete client;
-    return;
-  }
-
-//  Serial.println("GET Data from cell 'A1':");
-//  if (client->GET(url3, host)) {
-//    ++connect_count;
-//  }
-//  else {
-//    ++error_count;
-//    DPRINT("Error-count while connecting: ");
-//    DPRINTLN(error_count);
-//  }
-
-  Serial.println("POST or SEND Sensor data to Google Spreadsheet:");
-  if (client->POST(url2, host, payload)) {
-    ;
-  }
-  else {
-    ++error_count;
-    DPRINT("Error-count while connecting: ");
-    DPRINTLN(error_count);
-  }
-
-  if (error_count > 3) {
-    Serial.println("Halting processor...");
-    delete client;
-    client = nullptr;
-    Serial.printf("Final free heap: %u\n", ESP.getFreeHeap());
-    Serial.printf("Final stack: %u\n", ESP.getFreeContStack());
-    Serial.flush();
-    ESP.deepSleep(0);
+  else{
+    Serial.println("Error creating client object!");
   }
   
-  delay(10000);    // keep delay of minimum 2 seconds as dht allow reading after 2 seconds interval and also for google sheet
+  // Create json object string to send to Google Sheets
+  payload = payload_base + "\"" + sheetHumid + "," + sheetTemp + "\"}";
+  
+  // Publish data to Google Sheets
+  Serial.println("Publishing data...");
+  Serial.println(payload);
+  if(client->POST(url, host, payload)){ 
+    // do stuff here if publish was successful
+  }
+  else{
+    // do stuff here if publish was not successful
+    Serial.println("Error while connecting");
+  }
+
+  // a delay of several seconds is required before publishing again    
+  delay(5000);
 }
