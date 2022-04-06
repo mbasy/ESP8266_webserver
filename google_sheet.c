@@ -1,10 +1,15 @@
+/*
+ * ESP822 temprature logging to Google Sheet
+ * CircuitDigest(www.circuitdigest.com)
+*/
+
 #include <ESP8266WiFi.h>
 #include "HTTPSRedirect.h"
 #include "DebugMacros.h"
 #include <DHT.h>
 
-#define DHTPIN D4                                                           // what digital pin we're connected to
-#define DHTTYPE DHT11                                                       // select dht type as DHT 11 or DHT22
+#define DHTPIN 5                                                           // what digital pin we're connected to
+#define DHTTYPE DHT22                                                       // select dht type as DHT 11 or DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
 float h;
@@ -12,11 +17,11 @@ float t;
 String sheetHumid = "";
 String sheetTemp = "";
 
-const char* ssid = "";                //replace with our wifi ssid
-const char* password = "";         //replace with your wifi password
+const char* ssid = "sigma-guest";                //replace with our wifi ssid
+const char* password = "starforlife2005";         //replace with your wifi password
 
 const char* host = "script.google.com";
-const char *GScriptId = "AKfycbxy9wAZKoPIpPq5AvqYTFFn5kkqK_-avacf2NU_w7ycoEtlkuNt"; // Replace with your own google script id
+const char *GScriptId = "AKfycbyd8zByoh1pEv8lf9VNWb9QASjXZEEwOeeNFkKv0bTm3NbEpvk"; // Replace with your own google script id
 const int httpsPort = 443; //the https port is same
 
 // echo | openssl s_client -connect script.google.com:443 |& openssl x509 -fingerprint -noout
@@ -182,5 +187,5 @@ void loop() {
     ESP.deepSleep(0);
   }
   
-  delay(3000);    // keep delay of minimum 2 seconds as dht allow reading after 2 seconds interval and also for google sheet
+  delay(10000);    // keep delay of minimum 2 seconds as dht allow reading after 2 seconds interval and also for google sheet
 }
