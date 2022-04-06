@@ -31,7 +31,7 @@
 // Script examples
 // https://developers.google.com/adwords/scripts/docs/examples/spreadsheetapp
 
-var SS = SpreadsheetApp.openById('1eJVNX6Q20rULhTGwSct2yz-587P4amM6uBMcmM-Nyi0');    //Enter Your Sheet ID Got From Sheet URL Link
+var SS = SpreadsheetApp.openById('1MqT--OKLYDpOHSOjZKXxxG5Y_qti3blfB0URa2Lm1e0');    //Enter Your Sheet ID Got From Sheet URL Link
 var sheet = SS.getSheetByName('TempSheet');      // Enter your sheet name here, In my case it is TempSheet
 var str = "";
 

@@ -120,8 +120,8 @@ void loop() {
   }
   Serial.print("Humidity: ");  Serial.print(h);
   sheetHumid = String(h) + String("%");                                         //convert integer humidity to string humidity
-  Serial.print("%  Temperature: ");  Serial.print(t);  Serial.println("Â°C ");
-  sheetTemp = String(t) + String("Â°C");
+  Serial.print("%  Temperature: ");  Serial.print(t);  Serial.println("°C ");
+  sheetTemp = String(t) + String("°C");
 
   static int error_count = 0;
   static int connect_count = 0;
