@@ -1,12 +1,16 @@
+// Example Arduino/ESP8266 code to upload data to Google Sheets
+// Follow setup instructions found here:
+// https://github.com/StorageB/Google-Sheets-Logging
+// reddit: u/StorageB107
+// email: StorageUnitB@gmail.com
+
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include "HTTPSRedirect.h"
 #include <DHT.h>
 
 #define DHTPIN 5                                                           // what digital pin we're connected to
-#define RIGHT_S 4                                                           // what digital pin we're connected right sensor to
-#define LEFT_S 14                                                           // what digital pin we're connected left sensor to
-
 #define DHTTYPE DHT22                                                       // select dht type as DHT 11 or DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
@@ -14,7 +18,6 @@ float h;
 float t;
 String sheetHumid = "";
 String sheetTemp = "";
-int people_count = 0;
 
 // Enter network credentials:
 const char* ssid     = "sigma-guest";
@@ -40,8 +43,7 @@ int value1 = 0;
 int value2 = 0;
 
 void setup() {
-  pinMode(RIGHT_S, INPUT);
-  pinMode(LEFT_S, INPUT);
+
   Serial.begin(9600);        
   delay(10);
   Serial.println('\n');
@@ -93,8 +95,7 @@ void setup() {
 
 
 void loop() {
-  int right_bubble = digitalRead(RIGHT_S);
-  int left_bubble = digitalRead(LEFT_S);
+
   h = dht.readHumidity();                                              // Reading temperature or humidity takes about 250 milliseconds!
   t = dht.readTemperature();                                           // Read temperature as Celsius (the default)
 
@@ -102,33 +103,6 @@ void loop() {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
-
-if (right_bubble == HIGH){
-    Serial.println(" Motion Detected, right!\n");
-    delay(1000);
-    if(left_bubble == HIGH){
-                                         Serial.println("<<<<\n");
-                                         people_count++;
-                                         delay(3000);
-                                         }
-                            }
-                                       
-else if (left_bubble == HIGH){
-    Serial.println(" Motion Detected, left!\n");
-    delay(1000);
-    if(right_bubble == HIGH){
-                                         Serial.println(">>>>\n");
-                                         people_count--;
-                                         delay(3000);
-                                         }
-                            }
-              else{
-                   Serial.print("NO MOTION, # of people inside:%");
-                   Serial.print(people_count);
-                   Serial.println();
-                   
-              }
-              delay(500);
 
   Serial.print("Humidity: ");  Serial.print(h);
   sheetHumid = String(h) + String("%");                                         //convert integer humidity to string humidity
@@ -167,5 +141,5 @@ else if (left_bubble == HIGH){
   }
 
   // a delay of several seconds is required before publishing again    
-  //delay(500);
+  delay(5000);
 }
