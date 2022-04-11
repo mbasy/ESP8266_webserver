@@ -1,11 +1,3 @@
-// Example Google Scrips code to upload data to Google Sheets from Arduino/ESP8266
-// Follow setup instructions found here:
-// https://github.com/StorageB/Google-Sheets-Logging
-// reddit: u/StorageB107
-// email: StorageUnitB@gmail.com
-
-
-// Enter Spreadsheet ID here
 var SS = SpreadsheetApp.openById('1eJVNX6Q20rULhTGwSct2yz-587P4amM6uBMcmM-Nyi0');
 var str = "";
 
@@ -31,8 +23,8 @@ function doPost(e) {
     var sheet = SS.getSheetByName(parsedData.sheet_name); // sheet name to publish data to is specified in Arduino code
     var dataArr = parsedData.values.split(","); // creates an array of the values to publish 
          
-    var date_now = Utilities.formatDate(new Date(), "CST", "yyyy/MM/dd"); // gets the current date
-    var time_now = Utilities.formatDate(new Date(), "CST", "hh:mm:ss a"); // gets the current time
+    var date_now = Utilities.formatDate(new Date(), "GMT+2", "dd/MM/yyyy"); // gets the current date
+    var time_now = Utilities.formatDate(new Date(), "GMT+2", "hh:mm:ss a"); // gets the current time
     
     var value0 = dataArr [0]; // value0 from Arduino code
     var value1 = dataArr [1]; // value1 from Arduino code
@@ -48,7 +40,10 @@ function doPost(e) {
          
          //var range = sheet.getRange("A2:D2");              // use this to insert cells just above the existing data instead of inserting an entire row
          //range.insertCells(SpreadsheetApp.Dimension.ROWS); // use this to insert cells just above the existing data instead of inserting an entire row
-         
+         sheet.getRange('A1').setValue("Date");
+         sheet.getRange('B1').setValue("Time");
+         sheet.getRange('C1').setValue("Humidity");
+         sheet.getRange('D1').setValue("Temperature");
          sheet.getRange('A2').setValue(date_now); // publish current date to cell A2
          sheet.getRange('B2').setValue(time_now); // publish current time to cell B2
          sheet.getRange('C2').setValue(value0);   // publish value0 from Arduino code to cell C2
