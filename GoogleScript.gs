@@ -44,6 +44,7 @@ function doPost(e) {
          sheet.getRange('B1').setValue("Time");
          sheet.getRange('C1').setValue("Humidity");
          sheet.getRange('D1').setValue("Temperature");
+         sheet.getRange('E1').setValue("Occupancy"); 
          sheet.getRange('A2').setValue(date_now); // publish current date to cell A2
          sheet.getRange('B2').setValue(time_now); // publish current time to cell B2
          sheet.getRange('C2').setValue(value0);   // publish value0 from Arduino code to cell C2
