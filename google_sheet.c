@@ -3,11 +3,16 @@
 #include "HTTPSRedirect.h"
 #include <DHT.h>
 
-#define DHTPIN 5                                                           // what digital pin we're connected to
-#define RIGHT_S 4                                                           // what digital pin we're connected right sensor to
-#define LEFT_S 14                                                           // what digital pin we're connected left sensor to
+#define DHTPIN 12
+#define S_Delay 1500
+#define S_Delay_A 3000
+#define LOOP_Delay 400
 
-#define DHTTYPE DHT22                                                       // select dht type as DHT 11 or DHT22
+int counter = 0;
+int right = 16; 
+int left = 14;                 
+
+#define DHTTYPE DHT22                         
 DHT dht(DHTPIN, DHTTYPE);
 
 float h;
@@ -41,8 +46,8 @@ int value1 = 0;
 int value2 = 0;
 
 void setup() {
-  pinMode(RIGHT_S, INPUT);
-  pinMode(LEFT_S, INPUT);
+  pinMode(right, INPUT);
+  pinMode(left, INPUT);
   Serial.begin(9600);        
   delay(10);
   Serial.println('\n');
@@ -90,12 +95,13 @@ void setup() {
   }
   delete client;    // delete HTTPSRedirect object
   client = nullptr; // delete HTTPSRedirect object
+  delay(60000);
 }
 
 
 void loop() {
-  int right_bubble = digitalRead(RIGHT_S);
-  int left_bubble = digitalRead(LEFT_S);
+  int right_bububle = digitalRead(right);
+  int left_bubble = digitalRead(left);
   h = dht.readHumidity();                                              // Reading temperature or humidity takes about 250 milliseconds!
   t = dht.readTemperature();                                           // Read temperature as Celsius (the default)
 
@@ -103,34 +109,39 @@ void loop() {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
+  if (right_bububle == HIGH) {
+    Serial.println("Motion detected: RIGHT SIDE");
+      delay(S_Delay);
+      left_bubble = digitalRead(left);
+      if(left_bubble == HIGH){
+              Serial.println("\t\t\t(>>>>>>>>>>IN<<<<<<<<<<)");
+              counter++;
+              delay(S_Delay_A);
+        }
+    }
 
-if (right_bubble == HIGH){
-    Serial.println(" Motion Detected, right!\n");
-    delay(1000);
-    if(left_bubble == HIGH){
-                                         Serial.println("<<<<\n");
-                                         people_count++;
-                                         delay(3000);
-                                         }
-                            }
-                                       
-if (left_bubble == HIGH){
-    Serial.println(" Motion Detected, left!\n");
-    delay(1000);
-    if(right_bubble == HIGH){
-                                         Serial.println(">>>>\n");
-                                         people_count--;
-                                         delay(3000);
-                                         }
-                            }
-              else{
-                   Serial.print("NO MOTION, # of people inside:%");
-                   Serial.print(people_count);
-                   Serial.println();
-                   
-              }
-              delay(500);
-  while(loop_counter == 10){
+    right_bububle = digitalRead(right);
+    left_bubble = digitalRead(left);
+    
+    if (left_bubble == HIGH) {
+    Serial.println("Motion detected: LEFT SIDE");
+    delay(S_Delay);
+    right_bububle = digitalRead(right);
+      if(right_bububle == HIGH){ 
+        Serial.println("\t\t\t(<<<<<<<<<<OUT>>>>>>>>>>)");
+        counter--;
+        delay(S_Delay_A); 
+        }
+    }
+    else {
+          Serial.print("\t\t\t###NOTHING###COUNTER: ");
+          Serial.print(counter);
+          Serial.print("###\n");
+          }
+
+    if(counter < 0){ counter = 0;}
+
+  while(loop_counter == 20){
   Serial.print("Humidity: ");  Serial.print(h);
   sheetHumid = String(h) + String("%");                                         //convert integer humidity to string humidity
   Serial.print("%  Temperature: ");  Serial.print(t);  Serial.println("°C ");
@@ -154,7 +165,7 @@ if (left_bubble == HIGH){
   }
   
   // Create json object string to send to Google Sheets
-  payload = payload_base + "\"" + sheetHumid + "," + sheetTemp + "\"}";
+  payload = payload_base + "\"" + sheetHumid + "," + sheetTemp + "," + counter + "\"}";
   
   // Publish data to Google Sheets
   Serial.println("Publishing data...");
