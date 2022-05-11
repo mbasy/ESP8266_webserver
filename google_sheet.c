@@ -2,15 +2,26 @@
 #include <ESP8266WiFi.h>
 #include "HTTPSRedirect.h"
 #include <DHT.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 #define DHTPIN 12
-#define S_Delay 1500
+#define S_Delay 400
 #define S_Delay_A 3000
 #define LOOP_Delay 400
 
 int counter = 0;
 int right = 16; 
 int left = 14;                 
+
+//time
+const long utcOffsetInSeconds = 3600;
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", utcOffsetInSeconds);
+int today = 0;
+int tomorrow = 0;
+
 
 #define DHTTYPE DHT22                         
 DHT dht(DHTPIN, DHTTYPE);
@@ -23,14 +34,14 @@ int people_count = 0;
 int loop_counter = 0;
 
 // Enter network credentials:
-const char* ssid     = "sigma-guest";
+const char* ssid     = "nexer-guest";
 const char* password = "starforlife2005";
 
 // Enter Google Script Deployment ID:
 const char *GScriptId = "AKfycbyd8zByoh1pEv8lf9VNWb9QASjXZEEwOeeNFkKv0bTm3NbEpvk";
 
 // Enter command (insert_row or append_row) and your Google Sheets sheet name (default is Sheet1):
-String payload_base =  "{\"command\": \"insert_row\", \"sheet_name\": \"TempSheet\", \"values\": ";
+String payload_base =  "{\"command\": \"insert_row\", \"sheet_name\": \"Temp2\", \"values\": ";
 String payload = "";
 
 // Google Sheets setup (do not edit)
@@ -93,6 +104,15 @@ void setup() {
     Serial.println(host);
     return;
   }
+  timeClient.begin();
+  timeClient.update();
+  today = timeClient.getDay();
+  if(today==6){
+    tomorrow = 0;
+  }
+  else{
+      tomorrow = today+1;
+  }
   delete client;    // delete HTTPSRedirect object
   client = nullptr; // delete HTTPSRedirect object
   delay(60000);
@@ -109,6 +129,8 @@ void loop() {
     Serial.println(F("Failed to read from DHT sensor!"));
     return;
   }
+  
+  
   if (right_bububle == HIGH) {
     Serial.println("Motion detected: RIGHT SIDE");
       delay(S_Delay);
@@ -120,9 +142,6 @@ void loop() {
         }
     }
 
-    right_bububle = digitalRead(right);
-    left_bubble = digitalRead(left);
-    
     if (left_bubble == HIGH) {
     Serial.println("Motion detected: LEFT SIDE");
     delay(S_Delay);
@@ -141,11 +160,28 @@ void loop() {
 
     if(counter < 0){ counter = 0;}
 
-  while(loop_counter == 20){
+  while(loop_counter == 30){
+    
+  timeClient.update();
+  today = timeClient.getDay();
+  if (today == tomorrow)
+  {
+    counter = 0;
+    if(today == 6){
+      tomorrow = 0;
+    }
+    else{
+      tomorrow = today+1;
+    }
+  }
+
   Serial.print("Humidity: ");  Serial.print(h);
   sheetHumid = String(h) + String("%");                                         //convert integer humidity to string humidity
   Serial.print("%  Temperature: ");  Serial.print(t);  Serial.println("°C ");
   sheetTemp = String(t) + String("°C");
+  Serial.print("Today is : ");
+  Serial.print(daysOfTheWeek[today]);
+  Serial.print("\n");
 
   static bool flag = false;
   if (!flag){
